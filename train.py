@@ -121,6 +121,11 @@ def main():
     input_dim = X.shape[1]
     
     models_to_test = [
+        ("LSTM", LSTMModel(input_dim)),
+        ("GRU", GRUModel(input_dim)),
+        ("Transformer", TransformerModel(input_dim)),
+        ("Informer", InformerModel(input_dim)),
+        ("CNN-LSTM", CNNLSTMModel(input_dim)),
         ("xLSTM", xLSTMModel(input_dim))
     ]
     
