@@ -1,0 +1,7 @@
+archive.zip
+unsw_nb15/
+X.npy
+y.npy
+*.parquet
+__pycache__/
+.ipynb_checkpoints/
