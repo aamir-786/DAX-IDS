@@ -5,8 +5,8 @@ import os
 
 def preprocess():
     print("Loading data...")
-    train_path = 'unsw_nb15/UNSW_NB15_training-set.parquet'
-    test_path = 'unsw_nb15/UNSW_NB15_testing-set.parquet'
+    train_path = '../datasets/UNSW-NB15/UNSW_NB15_training-set.parquet'
+    test_path = '../datasets/UNSW-NB15/UNSW_NB15_testing-set.parquet'
     
     df1 = pd.read_parquet(train_path)
     df2 = pd.read_parquet(test_path)

@@ -1,7 +1,13 @@
 archive.zip
-unsw_nb15/
-X.npy
-y.npy
-*.parquet
+CIC-IDS2017.zip
+datasets/
+UNSW-NB15/unsw_nb15/
+UNSW-NB15/X.npy
+UNSW-NB15/y.npy
+CIC-IDS2017/X.npy
+CIC-IDS2017/y.npy
 __pycache__/
+*.npy
+*.parquet
+*.csv
 .ipynb_checkpoints/
