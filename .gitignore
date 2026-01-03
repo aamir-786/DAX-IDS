@@ -1,14 +1,16 @@
 archive.zip
 CIC-IDS2017.zip
-datasets/
-UNSW-NB15/unsw_nb15/
-UNSW-NB15/X.npy
-UNSW-NB15/y.npy
-CIC-IDS2017/X.npy
-CIC-IDS2017/y.npy
-__pycache__/
+
+# Large processed data
 *.npy
-*.parquet
-*.csv
+
+# Large raw dataset files (>100MB)
+datasets/CIC-IDS2017/Monday-WorkingHours.pcap_ISCX.csv
+datasets/CIC-IDS2017/Tuesday-WorkingHours.pcap_ISCX.csv
+datasets/CIC-IDS2017/Wednesday-workingHours.pcap_ISCX.csv
+
+# Standard ignores
+UNSW-NB15/unsw_nb15/
+__pycache__/
 .ipynb_checkpoints/
 .plan.md
