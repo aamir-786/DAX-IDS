@@ -3,26 +3,30 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, average_precision_score, matthews_corrcoef, confusion_matrix
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from models import LSTMModel, GRUModel, TransformerModel, InformerModel, CNNLSTMModel, xLSTMModel
 import time
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Add parent directory to path to import models
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from models import LSTMModel, GRUModel, TransformerModel, InformerModel, CNNLSTMModel, xLSTMModel, BiLSTMModel, TCNModel, AutoformerModel
+import argparse
 
 # Settings
-# For CIC-IDS2017, we use a slightly larger batch size due to data volume
 WINDOW_SIZE = 30
 STEP_SIZE = 1
-BATCH_SIZE = 2048 # Increased for speed
-EPOCHS = 3 # Reduced epochs for CIC-IDS2017 due to size, but enough for convergence usually
+BATCH_SIZE = 2048 # Larger for CIC-IDS2017
+EPOCHS = 3 # Fewer epochs due to size
 LEARNING_RATE = 1e-3
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class AnomalyDataset(Dataset):
     def __init__(self, X, y, window_size=30):
-        # We use float32 to save memory
+        # Use torch.from_numpy to share memory if possible
         self.X = torch.from_numpy(X)
         self.y = torch.from_numpy(y)
         self.window_size = window_size
@@ -36,18 +40,22 @@ class AnomalyDataset(Dataset):
         sq_y = self.y[idx + self.window_size - 1]
         return sq_X, sq_y
 
-def train_model(model, train_loader, val_loader, model_name):
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def train_model(model, train_loader, val_loader, model_name, epochs):
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     best_val_f1 = 0
     best_model_state = None
     
+    start_time = time.time()
     print(f"Training {model_name}...")
-    for epoch in range(EPOCHS):
+    for epoch in range(epochs):
         model.train()
         train_loss = 0
-        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}", leave=False)
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
         for batch_X, batch_y in pbar:
             batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
             
@@ -59,76 +67,108 @@ def train_model(model, train_loader, val_loader, model_name):
             train_loss += loss.item()
             pbar.set_postfix({'loss': f'{loss.item():.4f}'})
             
-        # Validation - using a subset of validation for speed if it's too large
-        # But we'll try full for now
-        val_f1 = evaluate_f1(model, val_loader)
+        # Validation - limited for speed on CIC-IDS2017
+        val_metrics = evaluate_metrics(model, val_loader, limit_batches=100)
+        val_f1 = val_metrics['f1']
         if val_f1 >= best_val_f1:
             best_val_f1 = val_f1
             best_model_state = {k: v.cpu() for k, v in model.state_dict().items()}
             
         print(f"Epoch {epoch+1} - Loss: {train_loss/len(train_loader):.4f}, Val F1: {val_f1:.4f}")
         
+    training_time = time.time() - start_time
     if best_model_state:
         model.load_state_dict(best_model_state)
-    return model
+    return model, training_time
 
-def evaluate_f1(model, loader):
+def evaluate_metrics(model, loader, model_name_str="Model", save_plots=False, limit_batches=None):
     model.eval()
     all_preds = []
+    all_probs = []
     all_y = []
-    with torch.no_grad():
-        # Limit validation to speed up
-        count = 0
-        for batch_X, batch_y in loader:
-            batch_X = batch_X.to(DEVICE)
-            outputs = model(batch_X)
-            preds = (outputs >= 0.5).float().cpu().numpy()
-            all_preds.extend(preds)
-            all_y.extend(batch_y.numpy())
-            count += 1
-            if count > 100: break # Skip too deep validation for speed
-    return f1_score(all_y, all_preds, zero_division=0)
-
-def evaluate_metrics(model, loader):
-    model.eval()
-    all_preds = []
-    all_y = []
+    
+    start_inf = time.time()
+    batch_count = 0
     with torch.no_grad():
         for batch_X, batch_y in loader:
             batch_X = batch_X.to(DEVICE)
             outputs = model(batch_X)
+            probs = outputs.cpu().numpy()
             preds = (outputs >= 0.5).float().cpu().numpy()
             all_preds.extend(preds)
+            all_probs.extend(probs)
             all_y.extend(batch_y.numpy())
-            
-    p = precision_score(all_y, all_preds, zero_division=0)
-    r = recall_score(all_y, all_preds, zero_division=0)
-    f1 = f1_score(all_y, all_preds, zero_division=0)
-    return p, r, f1
+            batch_count += 1
+            if limit_batches and batch_count >= limit_batches:
+                break
+    
+    time_elapsed = time.time() - start_inf
+    avg_inf_time_batch = time_elapsed / batch_count if batch_count > 0 else 0
+    avg_inf_time_sample = time_elapsed / (batch_count * BATCH_SIZE) if batch_count > 0 else 0
+    
+    y_true = np.array(all_y)
+    y_pred = np.array(all_preds)
+    y_prob = np.array(all_probs)
+    
+    p = precision_score(y_true, y_pred, zero_division=0)
+    r = recall_score(y_true, y_pred, zero_division=0)
+    f1 = f1_score(y_true, y_pred, zero_division=0)
+    
+    try:
+        roc_auc = roc_auc_score(y_true, y_prob)
+    except:
+        roc_auc = 0.5
+        
+    pr_auc = average_precision_score(y_true, y_prob)
+    mcc = matthews_corrcoef(y_true, y_pred)
+    
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+    
+    # Save Visualizations
+    if save_plots:
+        save_dir = os.path.join(os.path.dirname(__file__), 'plots', model_name_str)
+        os.makedirs(save_dir, exist_ok=True)
+        from sklearn.metrics import roc_curve, precision_recall_curve
+        fpr_vals, tpr_vals, _ = roc_curve(y_true, y_prob)
+        plt.figure(); plt.plot(fpr_vals, tpr_vals, label=f'ROC (area = {roc_auc:.2f})'); plt.plot([0, 1], [0, 1], 'k--'); plt.xlabel('FPR'); plt.ylabel('TPR'); plt.title(f'ROC - {model_name_str}'); plt.legend(); plt.savefig(os.path.join(save_dir, 'roc_curve.png')); plt.close()
+        
+        prec_vals, rec_vals, _ = precision_recall_curve(y_true, y_prob)
+        plt.figure(); plt.plot(rec_vals, prec_vals, label=f'PR (area = {pr_auc:.2f})'); plt.xlabel('Recall'); plt.ylabel('Precision'); plt.title(f'PR - {model_name_str}'); plt.legend(); plt.savefig(os.path.join(save_dir, 'pr_curve.png')); plt.close()
+        
+        cm = confusion_matrix(y_true, y_pred)
+        plt.figure(figsize=(6, 4)); sns.heatmap(cm, annot=True, fmt='d', cmap='Blues'); plt.xlabel('Predicted'); plt.ylabel('Actual'); plt.title(f'CM - {model_name_str}'); plt.savefig(os.path.join(save_dir, 'confusion_matrix.png')); plt.close()
+    
+    return {
+        'precision': p, 'recall': r, 'f1': f1,
+        'roc_auc': roc_auc, 'pr_auc': pr_auc, 'mcc': mcc, 'fpr': fpr,
+        'inf_time_batch': avg_inf_time_batch,
+        'inf_time_sample': avg_inf_time_sample
+    }
 
 def main():
     print(f"Using device: {DEVICE}")
-    X = np.load('X.npy')
-    y = np.load('y.npy')
+    base_dir = os.path.dirname(__file__)
+    X = np.load(os.path.join(base_dir, 'X.npy'))
+    y = np.load(os.path.join(base_dir, 'y.npy'))
     
     n = len(X)
-    # We will use a smaller subset for training in this demo to keep it responsive, 
-    # while maintaining the 70/15/15 ratio.
-    # Full training on 2.8M rows on CPU would take many hours.
-    # We take 200k rows for a representative sample if needed, but let's try 500k.
+    # Using a subset for feasibility if it's too large, but keeping 60/20/20 split
     SUBSET_SIZE = 500000 
     if n > SUBSET_SIZE:
-        print(f"Subsampling {SUBSET_SIZE} rows for feasibility on CPU...")
+        print(f"Subsampling {SUBSET_SIZE} rows for feasibility...")
         X = X[:SUBSET_SIZE]
         y = y[:SUBSET_SIZE]
         n = SUBSET_SIZE
 
-    train_end = int(0.7 * n)
-    val_end = int(0.85 * n)
+    train_end = int(0.6 * n)
+    val_end = int(0.8 * n)
     
     X_train, y_train = X[:train_end], y[:train_end]
     X_val, y_val = X[train_end:val_end], y[train_end:val_end]
     X_test, y_test = X[val_end:], y[val_end:]
+    
+    print(f"Data Split: Train={len(y_train)}, Val={len(y_val)}, Test={len(y_test)}")
     
     train_ds = AnomalyDataset(X_train, y_train, WINDOW_SIZE)
     val_ds = AnomalyDataset(X_val, y_val, WINDOW_SIZE)
@@ -140,32 +180,71 @@ def main():
     
     input_dim = X.shape[1]
     
-    models_to_test = [
+    model_list = [
         ("LSTM", LSTMModel(input_dim)),
         ("GRU", GRUModel(input_dim)),
+        ("BiLSTM", BiLSTMModel(input_dim)),
         ("Transformer", TransformerModel(input_dim)),
         ("Informer", InformerModel(input_dim)),
+        ("Autoformer", AutoformerModel(input_dim)),
         ("CNN-LSTM", CNNLSTMModel(input_dim)),
+        ("TCN", TCNModel(input_dim)),
         ("xLSTM", xLSTMModel(input_dim))
     ]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default='all', help='Model to train (all, LSTM, GRU, etc.)')
+    parser.add_argument('--epochs', type=int, default=EPOCHS, help='Number of epochs')
+    args = parser.parse_args()
     
-    results = []
+    current_epochs = args.epochs
     
-    for name, model in models_to_test:
+    if args.model != 'all':
+        model_list = [m for m in model_list if m[0].lower() == args.model.lower()]
+        if not model_list:
+            print(f"Model {args.model} not found.")
+            return
+
+    benchmarks = []
+    
+    for name, model in model_list:
         model = model.to(DEVICE)
+        params = count_parameters(model)
+        
         try:
-            trained_model = train_model(model, train_loader, val_loader, name)
-            p, r, f1 = evaluate_metrics(trained_model, test_loader)
-            results.append((name, p, r, f1))
-            print(f"Results for {name}: Precision: {p:.4f}, Recall: {r:.4f}, F1: {f1:.4f}")
+            # Train
+            trained_model, train_time = train_model(model, train_loader, val_loader, name, current_epochs)
+            
+            # Evaluate
+            metrics = evaluate_metrics(trained_model, test_loader, name, save_plots=True)
+            
+            benchmarks.append({
+                'name': name,
+                'params': params,
+                'train_time': train_time,
+                'metrics': metrics
+            })
+            print(f"Finished {name}. F1: {metrics['f1']:.4f}")
         except Exception as e:
             print(f"Error training {name}: {e}")
-        
-    print("\nCIC-IDS2017 Results Table:")
-    print(f"{'Model':<15} | {'Precision':<10} | {'Recall':<10} | {'F1':<10}")
-    print("-" * 50)
-    for name, p, r, f1 in results:
-        print(f"{name:<15} | {p:<10.4f} | {r:<10.4f} | {f1:<10.4f}")
+
+    # Tables for CIC-IDS2017
+    print("\n" + "="*50)
+    print("CIC-IDS2017 Results")
+    print("="*50)
+    
+    print("\nTABLE 3: Efficiency Metrics (CIC-IDS2017)")
+    print(f"{'Model':<15} | {'Params':<12} | {'Train Time (s)':<15} | {'Inf Time/Sample (ms)':<20}")
+    print("-" * 70)
+    for b in benchmarks:
+        print(f"{b['name']:<15} | {b['params']:<12,} | {b['train_time']:<15.2f} | {b['metrics']['inf_time_sample']*1000:<20.4f}")
+
+    print("\nTABLE 5: Statistical Metrics (CIC-IDS2017)")
+    print(f"{'Model':<15} | {'ROC-AUC':<10} | {'PR-AUC':<10} | {'MCC':<10} | {'FPR':<10} | {'Latency/Batch (ms)':<15}")
+    print("-" * 85)
+    for b in benchmarks:
+        m = b['metrics']
+        print(f"{b['name']:<15} | {m['roc_auc']:<10.4f} | {m['pr_auc']:<10.4f} | {m['mcc']:<10.4f} | {m['fpr']:<10.4f} | {m['inf_time_batch']*1000:<15.2f}")
 
 if __name__ == "__main__":
     main()

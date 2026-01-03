@@ -11,3 +11,4 @@ __pycache__/
 *.parquet
 *.csv
 .ipynb_checkpoints/
+.plan.md
