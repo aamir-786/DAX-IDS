@@ -19,11 +19,11 @@ Due to GitHub's file size limits (100MB), larger raw files and processed
 components are not included in this repository.
 
 1. **UNSW-NB15**:
-   - [Original Dataset Source](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
+   - [Original Dataset Source](https://www.kaggle.com/datasets/dhoogla/unswnb15)
    - The `.parquet` files used in this project are derived from the official CSV
      headers.
 2. **CIC-IDS2017**:
-   - [Original Dataset Source](https://www.unb.ca/cic/datasets/ids-2017.html)
+   - [Original Dataset Source](http://kaggle.com/datasets/chethuhn/network-intrusion-dataset)
    - Download the "MachineLearningCSV.zip" and place the CSV files in
      `datasets/CIC-IDS2017/`.
 3. **Note on .npy Files**:
