@@ -25,19 +25,20 @@ LEARNING_RATE = 1e-3
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class AnomalyDataset(Dataset):
-    def __init__(self, X, y, window_size=30):
+    def __init__(self, X, y, indices, window_size=30):
         # Use torch.from_numpy to share memory if possible
         self.X = torch.from_numpy(X)
         self.y = torch.from_numpy(y)
+        self.indices = indices
         self.window_size = window_size
-        self.sequences_count = len(X) - window_size + 1
 
     def __len__(self):
-        return self.sequences_count
+        return len(self.indices)
 
     def __getitem__(self, idx):
-        sq_X = self.X[idx : idx + self.window_size]
-        sq_y = self.y[idx + self.window_size - 1]
+        real_idx = self.indices[idx]
+        sq_X = self.X[real_idx : real_idx + self.window_size]
+        sq_y = self.y[real_idx + self.window_size - 1]
         return sq_X, sq_y
 
 def count_parameters(model):
@@ -161,18 +162,24 @@ def main():
         y = y[:SUBSET_SIZE]
         n = SUBSET_SIZE
 
-    train_end = int(0.6 * n)
-    val_end = int(0.8 * n)
+    # Create indices for all possible windows
+    all_indices = np.arange(n - WINDOW_SIZE + 1)
+    np.random.seed(42)
+    np.random.shuffle(all_indices)
     
-    X_train, y_train = X[:train_end], y[:train_end]
-    X_val, y_val = X[train_end:val_end], y[train_end:val_end]
-    X_test, y_test = X[val_end:], y[val_end:]
+    num_windows = len(all_indices)
+    train_end = int(0.6 * num_windows)
+    val_end = int(0.8 * num_windows)
     
-    print(f"Data Split: Train={len(y_train)}, Val={len(y_val)}, Test={len(y_test)}")
+    train_indices = all_indices[:train_end]
+    val_indices = all_indices[train_end:val_end]
+    test_indices = all_indices[val_end:]
     
-    train_ds = AnomalyDataset(X_train, y_train, WINDOW_SIZE)
-    val_ds = AnomalyDataset(X_val, y_val, WINDOW_SIZE)
-    test_ds = AnomalyDataset(X_test, y_test, WINDOW_SIZE)
+    print(f"Data Split: Train={len(train_indices)}, Val={len(val_indices)}, Test={len(test_indices)}")
+    
+    train_ds = AnomalyDataset(X, y, train_indices, WINDOW_SIZE)
+    val_ds = AnomalyDataset(X, y, val_indices, WINDOW_SIZE)
+    test_ds = AnomalyDataset(X, y, test_indices, WINDOW_SIZE)
     
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
@@ -181,6 +188,7 @@ def main():
     input_dim = X.shape[1]
     
     model_list = [
+        ("xLSTM", xLSTMModel(input_dim)),
         ("LSTM", LSTMModel(input_dim)),
         ("GRU", GRUModel(input_dim)),
         ("BiLSTM", BiLSTMModel(input_dim)),
@@ -188,8 +196,7 @@ def main():
         ("Informer", InformerModel(input_dim)),
         ("Autoformer", AutoformerModel(input_dim)),
         ("CNN-LSTM", CNNLSTMModel(input_dim)),
-        ("TCN", TCNModel(input_dim)),
-        ("xLSTM", xLSTMModel(input_dim))
+        ("TCN", TCNModel(input_dim))
     ]
 
     parser = argparse.ArgumentParser()
@@ -245,6 +252,11 @@ def main():
     for b in benchmarks:
         m = b['metrics']
         print(f"{b['name']:<15} | {m['roc_auc']:<10.4f} | {m['pr_auc']:<10.4f} | {m['mcc']:<10.4f} | {m['fpr']:<10.4f} | {m['inf_time_batch']*1000:<15.2f}")
+
+    # Save results to JSON
+    import json
+    with open(os.path.join(base_dir, 'results.json'), 'w') as f:
+        json.dump(benchmarks, f, indent=4)
 
 if __name__ == "__main__":
     main()
