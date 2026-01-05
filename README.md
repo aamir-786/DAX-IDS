@@ -55,7 +55,7 @@ components are not included in this repository.
 
 ### 1. UNSW-NB15 Results
 
-#### TABLE 2: Efficiency Metrics (UNSW-NB15)
+#### TABLE 1: Efficiency Metrics (UNSW-NB15)
 
 | Model       | Params  | Train Time (s) | Inf Time/Sample (ms) |
 | ----------- | ------- | -------------- | -------------------- |
@@ -69,7 +69,7 @@ components are not included in this repository.
 | TCN         | 85,633  | 335.67         | 0.1586               |
 | xLSTM       | 65,089  | 293.10         | 0.1156               |
 
-#### TABLE 4: Statistical Metrics (UNSW-NB15)
+#### TABLE 2: Statistical Metrics (UNSW-NB15)
 
 | Model       | Precision | Recall | F1-Score | ROC-AUC | PR-AUC | MCC    | FPR    | Latency (ms) |
 | ----------- | --------- | ------ | -------- | ------- | ------ | ------ | ------ | ------------ |
@@ -99,7 +99,7 @@ components are not included in this repository.
 | TCN         | 57,217  | 286.82         | 0.1269               |
 | xLSTM       | 36,673  | 271.55         | 0.0845               |
 
-#### TABLE 5: Statistical Metrics (CIC-IDS2017)
+#### TABLE 4: Statistical Metrics (CIC-IDS2017)
 
 | Model       | Precision | Recall | F1-Score | ROC-AUC | PR-AUC | MCC    | FPR    | Latency (ms) |
 | ----------- | --------- | ------ | -------- | ------- | ------ | ------ | ------ | ------------ |
