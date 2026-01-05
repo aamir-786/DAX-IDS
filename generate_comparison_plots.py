@@ -3,72 +3,62 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-def load_results():
-    results_unsw = {}
-    results_cic = {}
+def plot_comparison_metrics():
+    # Load results
+    unsw_path = 'UNSW-NB15/results.json'
+    cic_path = 'CIC-IDS2017/results.json'
     
-    if os.path.exists('UNSW-NB15/results.json'):
-        with open('UNSW-NB15/results.json', 'r') as f:
-            data = json.load(f)
-            for item in data:
-                results_unsw[item['name']] = item
-                
-    if os.path.exists('CIC-IDS2017/results.json'):
-        with open('CIC-IDS2017/results.json', 'r') as f:
-            data = json.load(f)
-            for item in data:
-                results_cic[item['name']] = item
-    return results_unsw, results_cic
-
-def plot_metric(results_unsw, results_cic, metric_path, title, ylabel, filename, is_nested=True):
-    models = sorted(list(set(list(results_unsw.keys()) + list(results_cic.keys()))))
-    
-    def get_val(results, model):
-        item = results.get(model)
-        if not item: return 0
-        if is_nested:
-            parts = metric_path.split('.')
-            val = item
-            for p in parts:
-                val = val.get(p, 0)
-            return val
-        return item.get(metric_path, 0)
-
-    unsw_vals = [get_val(results_unsw, m) for m in models]
-    cic_vals = [get_val(results_cic, m) for m in models]
-    
-    x = np.arange(len(models))
-    width = 0.35
-    
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(x - width/2, unsw_vals, width, label='UNSW-NB15', color='#3498db', alpha=0.8)
-    ax.bar(x + width/2, cic_vals, width, label='CIC-IDS2017', color='#e74c3c', alpha=0.8)
-    
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels(models)
-    ax.legend()
-    
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.tight_layout()
-    plt.savefig(filename)
-    print(f"Saved {filename}")
-
-def main():
-    unsw, cic = load_results()
-    if not unsw and not cic:
-        print("No results found.")
+    if not os.path.exists(unsw_path) or not os.path.exists(cic_path):
+        print("Results files not found. Generate them by running train.py first.")
         return
-        
-    # 1. F1 Score Comparison
-    plot_metric(unsw, cic, 'metrics.f1', 'Model Comparison: F1-Score', 'F1 Score', 'comparison_f1.png')
+
+    with open(unsw_path, 'r') as f:
+        unsw_results = json.load(f)
+    with open(cic_path, 'r') as f:
+        cic_results = json.load(f)
+
+    models = [r['name'] for r in unsw_results]
     
-    # 2. ROC-AUC Comparison
-    plot_metric(unsw, cic, 'metrics.roc_auc', 'Model Comparison: ROC-AUC', 'ROC-AUC', 'comparison_roc.png')
-    
-    # 3. Training Time Comparison
-    plot_metric(unsw, cic, 'train_time', 'Model Comparison: Training Time (s)', 'Time (seconds)', 'comparison_time.png', is_nested=False)
+    # Metrics to plot
+    metrics = ['precision', 'recall', 'f1']
+    titles = ['Precision', 'Recall', 'F1-Score']
+    filenames = ['comparison_precision.png', 'comparison_recall.png', 'comparison_f1.png']
+
+    for metric, title, filename in zip(metrics, titles, filenames):
+        unsw_vals = [r['metrics'][metric] for r in unsw_results]
+        cic_vals = [r['metrics'][metric] for r in cic_results]
+
+        x = np.arange(len(models))
+        width = 0.35
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        rects1 = ax.bar(x - width/2, unsw_vals, width, label='UNSW-NB15', color='#3498db')
+        rects2 = ax.bar(x + width/2, cic_vals, width, label='CIC-IDS2017', color='#e74c3c')
+
+        ax.set_ylabel('Score')
+        ax.set_title(f'Model Comparison: {title}')
+        ax.set_xticks(x)
+        ax.set_xticklabels(models, rotation=45)
+        ax.legend()
+        ax.set_ylim(0, 1.1)
+
+        # Add value labels
+        def autolabel(rects):
+            for rect in rects:
+                height = rect.get_height()
+                ax.annotate(f'{height:.2f}',
+                            xy=(rect.get_x() + rect.get_width() / 2, height),
+                            xytext=(0, 3),
+                            textcoords="offset points",
+                            ha='center', va='bottom', fontsize=8)
+
+        autolabel(rects1)
+        autolabel(rects2)
+
+        fig.tight_layout()
+        plt.savefig(filename, dpi=300)
+        print(f"Saved {filename}")
+        plt.close()
 
 if __name__ == "__main__":
-    main()
+    plot_comparison_metrics()

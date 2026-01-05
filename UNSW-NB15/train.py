@@ -244,7 +244,7 @@ def main():
             'metrics': metrics
         })
         
-        print(f"Finished {name}. F1: {metrics['f1']:.4f}, ROC: {metrics['roc_auc']:.4f}")
+        print(f"Finished {name}. F1: {metrics['f1']:.4f}, Prec: {metrics['precision']:.4f}, Rec: {metrics['recall']:.4f}, ROC: {metrics['roc_auc']:.4f}")
 
     # Tables for UNSW-NB15
     print("\n" + "="*50)
@@ -258,11 +258,11 @@ def main():
         print(f"{b['name']:<15} | {b['params']:<12,} | {b['train_time']:<15.2f} | {b['metrics']['inf_time_sample']*1000:<20.4f}")
 
     print("\nTABLE 4: Statistical Metrics (UNSW-NB15)")
-    print(f"{'Model':<15} | {'ROC-AUC':<10} | {'PR-AUC':<10} | {'MCC':<10} | {'FPR':<10} | {'Latency/Batch (ms)':<15}")
-    print("-" * 85)
+    print(f"{'Model':<15} | {'Prec':<8} | {'Rec':<8} | {'F1':<8} | {'ROC-AUC':<10} | {'PR-AUC':<10} | {'MCC':<10} | {'FPR':<10} | {'Latency (ms)':<15}")
+    print("-" * 110)
     for b in benchmarks:
         m = b['metrics']
-        print(f"{b['name']:<15} | {m['roc_auc']:<10.4f} | {m['pr_auc']:<10.4f} | {m['mcc']:<10.4f} | {m['fpr']:<10.4f} | {m['inf_time_batch']*1000:<15.2f}")
+        print(f"{b['name']:<15} | {m['precision']:<8.4f} | {m['recall']:<8.4f} | {m['f1']:<8.4f} | {m['roc_auc']:<10.4f} | {m['pr_auc']:<10.4f} | {m['mcc']:<10.4f} | {m['fpr']:<10.4f} | {m['inf_time_batch']*1000:<15.2f}")
 
     # Save results to JSON
     import json

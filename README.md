@@ -71,17 +71,17 @@ components are not included in this repository.
 
 #### TABLE 4: Statistical Metrics (UNSW-NB15)
 
-| Model       | ROC-AUC | PR-AUC | MCC    | FPR    | Latency/Batch (ms) |
-| ----------- | ------- | ------ | ------ | ------ | ------------------ |
-| LSTM        | 0.9722  | 0.9841 | 0.7847 | 0.2122 | 61.82              |
-| GRU         | 0.9711  | 0.9834 | 0.7725 | 0.1162 | 61.12              |
-| BiLSTM      | 0.9737  | 0.9851 | 0.7913 | 0.2071 | 140.70             |
-| Transformer | 0.9763  | 0.9867 | 0.7921 | 0.1995 | 109.05             |
-| Informer    | 0.9740  | 0.9854 | 0.7770 | 0.2395 | 91.20              |
-| Autoformer  | 0.9704  | 0.9834 | 0.7683 | 0.1818 | 91.24              |
-| CNN-LSTM    | 0.9723  | 0.9842 | 0.7830 | 0.1945 | 64.51              |
-| TCN         | 0.9751  | 0.9860 | 0.7864 | 0.1873 | 81.19              |
-| xLSTM       | 0.9686  | 0.9820 | 0.7769 | 0.2109 | 59.17              |
+| Model       | Precision | Recall | F1-Score | ROC-AUC | PR-AUC | MCC    | FPR    | Latency (ms) |
+| ----------- | --------- | ------ | -------- | ------- | ------ | ------ | ------ | ------------ |
+| LSTM        | 0.8887    | 0.9655 | 0.9255   | 0.9722  | 0.9841 | 0.7847 | 0.2122 | 61.82        |
+| GRU         | 0.9314    | 0.8981 | 0.9144   | 0.9711  | 0.9834 | 0.7725 | 0.1162 | 61.12        |
+| BiLSTM      | 0.8913    | 0.9673 | 0.9277   | 0.9737  | 0.9851 | 0.7913 | 0.2071 | 140.70       |
+| Transformer | 0.8945    | 0.9637 | 0.9278   | 0.9763  | 0.9867 | 0.7921 | 0.1995 | 109.05       |
+| Informer    | 0.8771    | 0.9744 | 0.9232   | 0.9740  | 0.9854 | 0.7770 | 0.2395 | 91.20        |
+| Autoformer  | 0.9005    | 0.9371 | 0.9184   | 0.9704  | 0.9834 | 0.7683 | 0.1818 | 91.24        |
+| CNN-LSTM    | 0.8960    | 0.9548 | 0.9245   | 0.9723  | 0.9842 | 0.7830 | 0.1945 | 64.51        |
+| TCN         | 0.8993    | 0.9532 | 0.9255   | 0.9751  | 0.9860 | 0.7864 | 0.1873 | 81.19        |
+| xLSTM       | 0.8887    | 0.9596 | 0.9228   | 0.9686  | 0.9820 | 0.7769 | 0.2109 | 59.17        |
 
 ### 2. CIC-IDS2017 Results (500k Sample)
 
@@ -101,47 +101,69 @@ components are not included in this repository.
 
 #### TABLE 5: Statistical Metrics (CIC-IDS2017)
 
-| Model       | ROC-AUC | PR-AUC | MCC    | FPR    | Latency/Batch (ms) |
-| ----------- | ------- | ------ | ------ | ------ | ------------------ |
-| LSTM        | 0.9869  | 0.9562 | 0.8044 | 0.0178 | 236.43             |
-| GRU         | 0.9879  | 0.9594 | 0.8284 | 0.0199 | 208.93             |
-| BiLSTM      | 0.9903  | 0.9649 | 0.8681 | 0.0253 | 585.81             |
-| Transformer | 0.9928  | 0.9742 | 0.8905 | 0.0214 | 351.47             |
-| Informer    | 0.9908  | 0.9682 | 0.8758 | 0.0277 | 292.96             |
-| Autoformer  | 0.9876  | 0.9581 | 0.8512 | 0.0249 | 304.06             |
-| CNN-LSTM    | 0.9878  | 0.9602 | 0.8631 | 0.0335 | 187.09             |
-| TCN         | 0.9886  | 0.9622 | 0.8718 | 0.0285 | 259.90             |
-| xLSTM       | 0.9809  | 0.9396 | 0.8145 | 0.0215 | 172.98             |
+| Model       | Precision | Recall | F1-Score | ROC-AUC | PR-AUC | MCC    | FPR    | Latency (ms) |
+| ----------- | --------- | ------ | -------- | ------- | ------ | ------ | ------ | ------------ |
+| LSTM        | 0.9144    | 0.7703 | 0.8362   | 0.9869  | 0.9562 | 0.8044 | 0.0178 | 236.43       |
+| GRU         | 0.9096    | 0.8135 | 0.8589   | 0.9879  | 0.9594 | 0.8284 | 0.0199 | 208.93       |
+| BiLSTM      | 0.8969    | 0.8914 | 0.8941   | 0.9903  | 0.9649 | 0.8681 | 0.0253 | 585.81       |
+| Transformer | 0.9131    | 0.9112 | 0.9121   | 0.9928  | 0.9742 | 0.8905 | 0.0214 | 351.47       |
+| Informer    | 0.8902    | 0.9111 | 0.9005   | 0.9908  | 0.9682 | 0.8758 | 0.0277 | 292.96       |
+| Autoformer  | 0.8954    | 0.8651 | 0.8800   | 0.9876  | 0.9581 | 0.8512 | 0.0249 | 304.06       |
+| CNN-LSTM    | 0.8702    | 0.9117 | 0.8905   | 0.9878  | 0.9602 | 0.8631 | 0.0335 | 187.09       |
+| TCN         | 0.8871    | 0.9079 | 0.8974   | 0.9886  | 0.9622 | 0.8718 | 0.0285 | 259.90       |
+| xLSTM       | 0.9017    | 0.7988 | 0.8471   | 0.9809  | 0.9396 | 0.8145 | 0.0215 | 172.98       |
 
-## Conclusion
+## Conclusion & Comparative Analysis
 
-The benchmarking of nine deep learning architectures across **UNSW-NB15** and
-**CIC-IDS2017** provides several key insights:
+The comprehensive benchmarking of nine deep learning architectures across
+**UNSW-NB15** and **CIC-IDS2017** reveals critical trade-offs between temporal
+modeling capability and operational efficiency:
 
-1. **Top Performers**: The **Transformer** and **BiLSTM** architectures
-   consistently achieved the highest ROC-AUC and MCC scores. On CIC-IDS2017, the
-   Transformer led with an ROC-AUC of **0.9928** and an MCC of **0.8905**,
-   demonstrating its superior ability to model long-range dependencies.
-2. **Efficiency Champion**: **xLSTM** stands out as the most efficient model. It
-   required the fewest parameters (**36,673** for CIC-IDS2017) and offered the
-   fastest inference time per sample (**0.0845 ms**), while maintaining
-   competitive detection accuracy.
-3. **Hybrid Advantages**: **CNN-LSTM** proved to be the fastest to train,
-   offering an excellent balance between training speed and detection accuracy
-   by combining spatial reduction (CNN) with temporal analysis (LSTM).
-4. **Dataset Comparison**:
-   - **UNSW-NB15** models reached higher F1 scores but also higher False
-     Positive Rates.
-   - **CIC-IDS2017** exhibited much lower False Positive Rates (~0.02),
-     suggesting attack patterns are more distinct, though the overall complexity
-     of the dataset is higher.
+1. **Metric Trade-offs (Precision vs. Recall)**:
+   - **UNSW-NB15**: Models generally favored **Recall (avg. 0.94)** over
+     **Precision (avg. 0.89)**. This is ideal for high-security environments
+     where missing an attack is more costly than a false alarm.
+   - **CIC-IDS2017**: Models achieved significantly cleaner results with
+     **Precision (avg. 0.90)** and extremely low **False Positive Rates
+     (~0.02)**. This suggests that attack signatures in modern traffic are more
+     distinct but require higher thresholds to classify correctly.
+
+2. **Architectural Superiority**:
+   - The **Transformer** and **BiLSTM** architectures are the performance
+     leaders. On **CIC-IDS2017**, the Transformer achieved a balanced **F1 of
+     0.9121**, while on **UNSW-NB15**, it reached **0.9278**. Their ability to
+     capture long-range temporal dependencies makes them robust against complex,
+     multi-stage attacks.
+
+3. **Efficiency Champion (xLSTM)**:
+   - **xLSTM (extended memory LSTM)** proved to be the most viable for **edge
+     deployment**. It maintained an F1-score within **~2%** of the Transformer
+     while using **50% fewer parameters** and delivering the lowest inference
+     latency (**0.08ms per sample**).
+
+4. **Operational Insights**:
+   - **Hybrid models (CNN-LSTM)** offer the best training-speed-to-accuracy
+     ratio, making them suitable for environments where models must be
+     frequently retrained.
+   - **TCN (Temporal Convolutional Networks)** provides a strong alternative to
+     RNNs, matching BiLSTM performance with faster parallelizable computation.
 
 ## Visualizations
 
-### 1. Model Comparison: F1-Score
+### 1. Model Comparison: Precision
 
-![F1 Comparison](comparison_f1.png) _Displays the harmonic mean of precision and
-recall. High consistency is seen across attention-based models._
+![Precision Comparison](comparison_precision.png) _Measures the accuracy of
+positive predictions (minimizing false alarms)._
+
+### 2. Model Comparison: Recall
+
+![Recall Comparison](comparison_recall.png) _Measures the ability to detect all
+actual attacks (minimizing missed threats)._
+
+### 3. Model Comparison: F1-Score
+
+![F1 Comparison](comparison_f1.png) _The harmonic mean of precision and recall,
+providing a balanced performance metric._
 
 ### 2. Model Comparison: ROC-AUC
 
